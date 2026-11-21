@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: sarvinoz-collection-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: BRAND_NAME
+        value: "Sarvinoz Collection"
+      - key: CHANNEL_URL
+        value: "https://t.me/Sarvinozcollection1"
+      - key: CHANNEL_USERNAME
+        value: "@Sarvinozcollection1"
+      - key: ADMIN_USERNAME
+        value: "@Sarvinoz_admin"
+      - key: DB_NAME
+        value: "sarvinoz_collection.db"

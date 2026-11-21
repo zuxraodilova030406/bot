@@ -1,0 +1,23 @@
+# Environment variables
+.env
+.env.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# SQLite databases & temp files
+*.db
+*.sqlite3
+*.log
+.idea/
+.vscode/
