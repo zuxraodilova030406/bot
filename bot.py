@@ -9,6 +9,7 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+import aiohttp
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -64,6 +65,26 @@ async def start_render_health_server():
     await site.start()
     logger.info(f"Render Web Service salomatlik serveri 0.0.0.0:{port} da ishga tushdi.")
     return runner
+
+
+async def render_keep_alive_task():
+    """Background task to self-ping on Render every 10 minutes to prevent free tier sleep."""
+    external_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("PING_URL")
+    if not external_url:
+        return
+
+    health_url = f"{external_url.rstrip('/')}/health"
+    logger.info(f"Render 24/7 Keep-Alive faollashtirildi: {health_url}")
+
+    await asyncio.sleep(60)
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+                async with session.get(health_url, timeout=15) as resp:
+                    logger.info(f"Keep-Alive ping yuborildi: Status {resp.status}")
+            except Exception as e:
+                logger.warning(f"Keep-Alive ping xatosi: {e}")
+            await asyncio.sleep(600)  # Ping every 10 minutes to stay awake 24/7
 
 
 async def setup_bot_commands(bot: Bot):
@@ -132,12 +153,14 @@ async def main():
 
     # Start Render health server if PORT is provided
     web_runner = await start_render_health_server()
+    keep_alive_task = asyncio.create_task(render_keep_alive_task())
 
     # Drop pending updates and start polling
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
+        keep_alive_task.cancel()
         if web_runner:
             await web_runner.cleanup()
         await bot.session.close()
